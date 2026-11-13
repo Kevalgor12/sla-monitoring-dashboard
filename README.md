@@ -157,6 +157,23 @@ Open http://localhost:5173 and upload any file from `sample-data/`.
 
 ---
 
+## Tests
+
+```bash
+cd worker
+npm test            # vitest run — 56 tests
+```
+
+- **Unit tests** for the cleaner (timestamp/latency normalization, status classification, agent
+  de-duplication, issue counting) and the stats math (availability, SLA credit tiers, incident
+  coalescing, latency percentiles).
+- **Regression tests** that run **all five sample datasets** through the real pipeline and assert
+  the known-good numbers — day counts (detected, not hard-coded), `5 × 96 × days` clean
+  checkpoints, the injected defects (exactly one negative latency + one invalid status per file),
+  overall availability and the worst service. A change that shifts any of these fails loudly.
+
+---
+
 ## Deployment
 
 All free tier. You need a Cloudflare account (no card for this).
@@ -228,9 +245,9 @@ sla-monitor/
 
 ## What I'd do with more time
 
-- **Automated tests in the repo.** I validated `clean.ts`/`stats.ts` against all five files and
-  cross-checked incident detection, but that harness isn't committed — I'd add Vitest unit tests
-  for the cleaner and an integration test hitting a local D1.
+- **Integration tests hitting a live D1.** The committed Vitest suite covers `clean.ts`/`stats.ts`
+  (unit + regression across all five datasets); I'd add an end-to-end test that POSTs to a local
+  `wrangler dev` and asserts the `/stats` and `/logs` responses.
 - **Chunked ingestion** as the default (not just a fallback), so arbitrarily large files are
   guaranteed under the CPU budget.
 - **Incident drill-down & charts** — an availability timeline and latency sparkline per service.
