@@ -35,21 +35,29 @@ export function ServiceCard({ service }: ServiceCardProps) {
 
       {service.incidents.length > 0 && (
         <div className="svc-incidents">
-          <button className="link" onClick={() => setOpen((o) => !o)}>
-            {open ? "v" : ">"} {service.incidents.length} incident{service.incidents.length > 1 ? "s" : ""}
+          <button
+            className={`incident-toggle ${open ? "open" : ""}`}
+            onClick={() => setOpen((o) => !o)}
+            aria-expanded={open}
+          >
+            <span className="incident-caret">v</span>
+            {service.incidents.length} incident{service.incidents.length > 1 ? "s" : ""}
           </button>
           {open && (
-            <ul>
+            <div className="incident-list">
               {service.incidents
                 .slice()
                 .sort((a, b) => b.minutes - a.minutes)
                 .map((inc, i) => (
-                  <li key={i}>
-                    <code>{formatIncidentTime(inc.start)}</code> | {formatMinutes(inc.minutes)} |{" "}
-                    {inc.checkpoints} failed check{inc.checkpoints > 1 ? "s" : ""}
-                  </li>
+                  <div className="incident-row" key={i}>
+                    <span className="incident-time">{formatIncidentTime(inc.start)}</span>
+                    <span className="incident-meta">
+                      {formatMinutes(inc.minutes)} | {inc.checkpoints} failed check
+                      {inc.checkpoints > 1 ? "s" : ""}
+                    </span>
+                  </div>
                 ))}
-            </ul>
+            </div>
           )}
         </div>
       )}

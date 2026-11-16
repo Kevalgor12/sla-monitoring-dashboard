@@ -5,6 +5,7 @@ import { getLogs } from "../lib";
 import { buildLogFilters } from "../helpers";
 import { formatCount, formatLatency, formatTimestamp } from "../utils";
 import { LOG_DATE_MODES, LOG_STATUS_OPTIONS } from "../constants";
+import { SelectBox } from "./SelectBox";
 
 /** Filterable, paginated log table. */
 export function LogsView({ uploadId, services }: LogsViewProps) {
@@ -52,13 +53,12 @@ export function LogsView({ uploadId, services }: LogsViewProps) {
       <div className="filters">
         <div className="filter">
           <label>Date</label>
-          <select value={mode} onChange={(e) => changed<LogDateMode>(setMode)(e.target.value as LogDateMode)}>
-            {LOG_DATE_MODES.map((m) => (
-              <option key={m.value} value={m.value}>
-                {m.label}
-              </option>
-            ))}
-          </select>
+          <SelectBox
+            value={mode}
+            options={LOG_DATE_MODES.map((m) => ({ value: m.value, label: m.label }))}
+            onChange={(v) => changed<LogDateMode>(setMode)(v as LogDateMode)}
+            ariaLabel="Date filter mode"
+          />
         </div>
 
         {mode === "single" && (
@@ -82,25 +82,25 @@ export function LogsView({ uploadId, services }: LogsViewProps) {
 
         <div className="filter">
           <label>Service</label>
-          <select value={service} onChange={(e) => changed(setService)(e.target.value)}>
-            <option value="">All services</option>
-            {services.map((s) => (
-              <option key={s.service_id} value={s.service_id}>
-                {s.service_name}
-              </option>
-            ))}
-          </select>
+          <SelectBox
+            value={service}
+            options={[
+              { value: "", label: "All services" },
+              ...services.map((s) => ({ value: s.service_id, label: s.service_name })),
+            ]}
+            onChange={(v) => changed(setService)(v)}
+            ariaLabel="Service filter"
+          />
         </div>
 
         <div className="filter">
           <label>Status</label>
-          <select value={status} onChange={(e) => changed(setStatus)(e.target.value)}>
-            {LOG_STATUS_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          <SelectBox
+            value={status}
+            options={LOG_STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+            onChange={(v) => changed(setStatus)(v)}
+            ariaLabel="Status filter"
+          />
         </div>
       </div>
 
@@ -140,7 +140,6 @@ export function LogsView({ uploadId, services }: LogsViewProps) {
             )}
           </tbody>
         </table>
-        {loading && <div className="table-loading">Loading...</div>}
       </div>
 
       {data && data.pages > 1 && (
@@ -154,6 +153,12 @@ export function LogsView({ uploadId, services }: LogsViewProps) {
           <button className="btn" disabled={page >= data.pages} onClick={() => setPage((p) => p + 1)}>
             Next
           </button>
+        </div>
+      )}
+
+      {loading && (
+        <div className="section-loading" aria-live="polite" aria-busy="true">
+          <span className="spinner" />
         </div>
       )}
     </section>

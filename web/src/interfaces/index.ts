@@ -211,3 +211,17 @@ export interface LogFilterInput {
   status: string;
   page: number;
 }
+
+/** One option in a custom dropdown. */
+export interface SelectOption {
+  value: string;
+  label: string;
+}
+
+export interface SelectBoxProps {
+  value: string;
+  options: SelectOption[];
+  onChange: (value: string) => void;
+  ariaLabel?: string;
+  disabled?: boolean;
+}

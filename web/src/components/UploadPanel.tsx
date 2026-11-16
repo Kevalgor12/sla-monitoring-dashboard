@@ -3,6 +3,7 @@ import type { UploadPanelProps } from "../interfaces";
 import { uploadCsv } from "../lib";
 import { validateCsvFile } from "../validations";
 import { UPLOAD_HINT } from "../constants";
+import { SelectBox } from "./SelectBox";
 
 /** File picker + dataset selector. */
 export function UploadPanel({ uploads, activeId, onUploaded, onSelect, onError }: UploadPanelProps) {
@@ -48,14 +49,17 @@ export function UploadPanel({ uploads, activeId, onUploaded, onSelect, onError }
 
         {uploads.length > 0 && (
           <div className="dataset-select">
-            <label htmlFor="dataset">Dataset</label>
-            <select id="dataset" value={activeId ?? ""} onChange={(e) => onSelect(e.target.value)} disabled={busy}>
-              {uploads.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.filename} | {u.day_count}d | {new Date(u.uploaded_at).toLocaleString()}
-                </option>
-              ))}
-            </select>
+            <label>Dataset</label>
+            <SelectBox
+              value={activeId ?? ""}
+              options={uploads.map((u) => ({
+                value: u.id,
+                label: `${u.filename} | ${u.day_count}d | ${new Date(u.uploaded_at).toLocaleString()}`,
+              }))}
+              onChange={onSelect}
+              disabled={busy}
+              ariaLabel="Dataset"
+            />
           </div>
         )}
       </div>

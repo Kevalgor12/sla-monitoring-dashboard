@@ -56,7 +56,11 @@ export function DashboardPage() {
       />
 
       {error && <div className="banner error">{error}</div>}
-      {loading && <div className="banner">Loading...</div>}
+      {loading && (
+        <div className="page-loading">
+          <span className="spinner" />
+        </div>
+      )}
 
       {active && !loading && (
         <>
