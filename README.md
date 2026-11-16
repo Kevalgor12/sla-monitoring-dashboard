@@ -13,10 +13,10 @@ function) + **D1** (SQLite). No credit card, no containers, no servers.
 
 | Piece | URL |
 |---|---|
-| Dashboard (Pages) | `https://<your-project>.pages.dev` _(fill after deploy)_ |
-| Serverless function (Worker API) | `https://sla-monitor.<your-subdomain>.workers.dev` |
+| Dashboard (Pages) | https://sla-monitor-328.pages.dev |
+| Serverless function (Worker API) | https://sla-monitor.kevalgor.workers.dev |
 
-**Last verified live:** _<fill date after you deploy>_. Both `*.pages.dev` and `*.workers.dev`
+**Last verified live:** 2026-11-17. Both `*.pages.dev` and `*.workers.dev`
 stay up indefinitely on the free tier (no cold-shutdown). If anything is down at review time,
 redeploy with the steps in [Deployment](#deployment) - it takes ~2 minutes.
 

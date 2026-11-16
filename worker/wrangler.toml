@@ -8,7 +8,7 @@ compatibility_date = "2025-06-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "sla-db"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "668943f0-55d4-4407-a8de-82a5b0d390ec"
 
 [observability]
 enabled = true
