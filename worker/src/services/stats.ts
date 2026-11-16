@@ -1,93 +1,9 @@
-/**
- * stats.ts — turns cleaned checkpoints into the numbers the dashboard shows.
- * Computed once at upload time and stored on the `uploads` row (stats_json), so
- * reads are a single cheap SELECT and the math is never recomputed per page view.
- *
- * Audience: someone on-call or in billing. They care about availability vs the
- * SLA, how much credit is owed, when the outages were, and how slow things got.
- */
+// Turn cleaned checkpoints into the dashboard stats (per service + overall).
 
-import { cmpStr, epochToIso, type CleanCheck } from "./clean.ts";
-
-/** Each check represents a fixed monitoring window. 1 check / 15 min. */
-export const MINUTES_PER_CHECK = 15;
-
-/**
- * Incident coalescing: a single recovered checkpoint (one 15-min window) does
- * NOT end an incident. A service flapping 5xx→200→5xx for an hour is ONE outage
- * to a responder, not several. Two consecutive non-down windows end it.
- * (Every down window still counts fully toward downtime and availability.)
- */
-const INCIDENT_GAP_TOLERANCE = 1;
-
-/** SLA credit ladder. Documented as an assumption in the README; tweak here. */
-export function creditForAvailability(pct: number): number {
-  if (pct >= 99.9) return 0;
-  if (pct >= 99.0) return 10;
-  if (pct >= 95.0) return 25;
-  return 100;
-}
-
-export interface Incident {
-  start: string; // ISO — first failed check
-  end: string; // ISO — last failed check
-  checkpoints: number; // number of failed (5xx) checks in the incident
-  minutes: number; // wall-clock span start..end inclusive (includes brief recoveries)
-}
-
-export interface ServiceStats {
-  service_id: string;
-  service_name: string;
-  total_checks: number; // checkpoints counted toward availability (valid only)
-  up_checks: number;
-  down_checks: number;
-  invalid_checks: number; // excluded from availability, surfaced for transparency
-  availability_pct: number;
-  sla_target_pct: number;
-  sla_breached: boolean;
-  credit_pct: number;
-  incident_count: number;
-  downtime_minutes: number; // sum of failed windows
-  longest_incident_minutes: number;
-  incidents: Incident[];
-  latency_p50_ms: number | null;
-  latency_p95_ms: number | null;
-  latency_p99_ms: number | null;
-  latency_avg_ms: number | null;
-}
-
-export interface OverallStats {
-  services: number;
-  total_checkpoints: number;
-  availability_pct: number;
-  services_breaching_sla: number;
-  total_downtime_minutes: number;
-  total_incidents: number;
-  worst_service: { service_id: string; service_name: string; availability_pct: number } | null;
-}
-
-export interface DashboardStats {
-  sla_target_pct: number;
-  overall: OverallStats;
-  services: ServiceStats[];
-}
-
-const SLA_TARGET = 99.9;
-
-function percentile(sorted: number[], p: number): number | null {
-  if (sorted.length === 0) return null;
-  if (sorted.length === 1) return sorted[0];
-  const rank = (p / 100) * (sorted.length - 1);
-  const lo = Math.floor(rank);
-  const hi = Math.ceil(rank);
-  const val = sorted[lo] + (sorted[hi] - sorted[lo]) * (rank - lo);
-  return Math.round(val * 10) / 10;
-}
-
-function round(n: number, dp = 3): number {
-  const f = Math.pow(10, dp);
-  return Math.round(n * f) / f;
-}
+import { INCIDENT_GAP_TOLERANCE, MINUTES_PER_CHECK, SLA_TARGET } from "../constants";
+import { creditForAvailability } from "../helpers";
+import { cmpStr, epochToIso, percentile, round } from "../utils";
+import type { CleanCheck, DashboardStats, Incident, OverallStats, ServiceStats } from "../interfaces";
 
 export function computeStats(checks: CleanCheck[]): DashboardStats {
   const byService = new Map<string, CleanCheck[]>();
@@ -108,10 +24,10 @@ export function computeStats(checks: CleanCheck[]): DashboardStats {
     const latencies: number[] = [];
 
     const incidents: Incident[] = [];
-    let startEpoch = 0; // first failed check of the current incident
-    let lastDownEpoch = 0; // most recent failed check
+    let startEpoch = 0;
+    let lastDownEpoch = 0;
     let downInRun = 0;
-    let gapRun = 0; // consecutive non-down windows since the last failure
+    let gapRun = 0;
     let open = false;
 
     const closeRun = () => {
@@ -182,9 +98,7 @@ export function computeStats(checks: CleanCheck[]): DashboardStats {
     });
   }
 
-  services.sort(
-    (a, b) => a.availability_pct - b.availability_pct || cmpStr(a.service_id, b.service_id)
-  );
+  services.sort((a, b) => a.availability_pct - b.availability_pct || cmpStr(a.service_id, b.service_id));
 
   const totalUp = services.reduce((s, x) => s + x.up_checks, 0);
   const totalValid = services.reduce((s, x) => s + x.total_checks, 0);

@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { computeStats, creditForAvailability } from "../src/stats.ts";
-import type { CleanCheck, StatusClass } from "../src/clean.ts";
+import { computeStats } from "../src/services/stats";
+import { creditForAvailability } from "../src/helpers";
+import type { CleanCheck } from "../src/interfaces";
+import type { StatusClass } from "../src/types";
 
 const BASE = Date.parse("2025-05-01T00:00:00Z");
 const STEP = 15 * 60 * 1000;
@@ -19,7 +21,7 @@ function mk(i: number, cls: StatusClass, latency: number | null): CleanCheck {
   };
 }
 
-describe("creditForAvailability — SLA ladder", () => {
+describe("creditForAvailability - SLA ladder", () => {
   it("applies the correct tier including boundaries", () => {
     expect(creditForAvailability(100)).toBe(0);
     expect(creditForAvailability(99.9)).toBe(0);

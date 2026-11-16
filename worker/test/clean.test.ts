@@ -1,10 +1,6 @@
 import { describe, it, expect } from "vitest";
-import {
-  clean,
-  classifyStatus,
-  normalizeLatency,
-  normalizeTimestamp,
-} from "../src/clean.ts";
+import { clean } from "../src/services/clean";
+import { classifyStatus, normalizeLatency, normalizeTimestamp } from "../src/helpers";
 
 describe("normalizeTimestamp", () => {
   it("parses ISO 8601", () => {
@@ -13,7 +9,7 @@ describe("normalizeTimestamp", () => {
     expect(r.wasUnix).toBe(false);
   });
 
-  it("parses Unix epoch seconds (10 digits) → ms, flagged as unix", () => {
+  it("parses Unix epoch seconds (10 digits) -> ms, flagged as unix", () => {
     const r = normalizeTimestamp("1746938700");
     expect(r.ms).toBe(1746938700 * 1000);
     expect(r.wasUnix).toBe(true);
@@ -78,7 +74,7 @@ describe("classifyStatus", () => {
   });
 });
 
-describe("clean() — integration over a messy CSV", () => {
+describe("clean() - integration over a messy CSV", () => {
   const unixTs = Math.floor(Date.UTC(2025, 4, 1, 2, 0, 0) / 1000); // epoch seconds
   const csv = [
     "service_id,service_name,timestamp,status_code,latency,latency_unit,agent,region",

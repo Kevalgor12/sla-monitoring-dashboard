@@ -2,12 +2,10 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { clean } from "../src/clean.ts";
-import { computeStats } from "../src/stats.ts";
+import { clean } from "../src/services/clean";
+import { computeStats } from "../src/services/stats";
 
-// Regression lock against the five provided datasets. These expected values were
-// derived by analysing the raw data; they pin the cleaner + stats so a future
-// change that alters the numbers fails loudly.
+// End-to-end regression over the five provided datasets, with pinned expected values.
 const SAMPLES = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "sample-data");
 
 interface Case {
@@ -25,7 +23,7 @@ const CASES: Case[] = [
   { file: "monitoring_checks_30d_seed404.csv", days: 30, availability: 98.736, worst: "svc-reports" },
 ];
 
-describe("sample datasets — end-to-end regression", () => {
+describe("sample datasets - end-to-end regression", () => {
   for (const c of CASES) {
     describe(c.file, () => {
       const res = clean(readFileSync(join(SAMPLES, c.file), "utf8"));

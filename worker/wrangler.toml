@@ -1,10 +1,10 @@
-# Cloudflare Worker config — this Worker IS the "stateless serverless function".
-# After `wrangler d1 create sla-db`, paste the printed database_id below.
+# Cloudflare Worker config.
+# Run `wrangler d1 create sla-db`, then paste the printed database_id below.
 name = "sla-monitor"
 main = "src/index.ts"
 compatibility_date = "2025-06-01"
 
-# D1 binding — available in code as `env.DB`.
+# D1 binding - available as env.DB.
 [[d1_databases]]
 binding = "DB"
 database_name = "sla-db"
