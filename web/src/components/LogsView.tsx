@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
-import { LogsPage, ServiceStats, getLogs } from "../api.ts";
+import type { LogsPage, LogsViewProps } from "../interfaces";
+import type { LogDateMode } from "../types";
+import { getLogs } from "../lib";
+import { buildLogFilters } from "../helpers";
+import { formatCount, formatLatency, formatTimestamp } from "../utils";
+import { LOG_DATE_MODES, LOG_STATUS_OPTIONS } from "../constants";
 
-type Mode = "all" | "single" | "range";
-
-export function LogsView({ uploadId, services }: { uploadId: string; services: ServiceStats[] }) {
-  const [mode, setMode] = useState<Mode>("all");
+/** Filterable, paginated log table. */
+export function LogsView({ uploadId, services }: LogsViewProps) {
+  const [mode, setMode] = useState<LogDateMode>("all");
   const [day, setDay] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -15,7 +19,7 @@ export function LogsView({ uploadId, services }: { uploadId: string; services: S
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  // reset to page 1 whenever a filter changes
+  // reset to page 1 on any filter change
   function changed<T>(setter: (v: T) => void) {
     return (v: T) => {
       setter(v);
@@ -27,13 +31,7 @@ export function LogsView({ uploadId, services }: { uploadId: string; services: S
     let cancelled = false;
     setLoading(true);
     setErr(null);
-    const filters =
-      mode === "single"
-        ? { from: day || undefined, to: day || undefined }
-        : mode === "range"
-          ? { from: from || undefined, to: to || undefined }
-          : {};
-    getLogs(uploadId, { ...filters, service: service || undefined, status: status || undefined, page, pageSize: 50 })
+    getLogs(uploadId, buildLogFilters({ mode, day, from, to, service, status, page }))
       .then((d) => {
         if (!cancelled) setData(d);
       })
@@ -48,16 +46,18 @@ export function LogsView({ uploadId, services }: { uploadId: string; services: S
     <section className="panel logs-section">
       <div className="section-head static">
         <h2>Check logs</h2>
-        {data && <span className="period">{data.total.toLocaleString()} records</span>}
+        {data && <span className="period">{formatCount(data.total)} records</span>}
       </div>
 
       <div className="filters">
         <div className="filter">
           <label>Date</label>
-          <select value={mode} onChange={(e) => changed<Mode>(setMode)(e.target.value as Mode)}>
-            <option value="all">All dates</option>
-            <option value="single">Single day</option>
-            <option value="range">Date range</option>
+          <select value={mode} onChange={(e) => changed<LogDateMode>(setMode)(e.target.value as LogDateMode)}>
+            {LOG_DATE_MODES.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -95,10 +95,11 @@ export function LogsView({ uploadId, services }: { uploadId: string; services: S
         <div className="filter">
           <label>Status</label>
           <select value={status} onChange={(e) => changed(setStatus)(e.target.value)}>
-            <option value="">All</option>
-            <option value="up">Up</option>
-            <option value="down">Down (5xx)</option>
-            <option value="invalid">Invalid</option>
+            {LOG_STATUS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
           </select>
         </div>
       </div>
@@ -120,13 +121,13 @@ export function LogsView({ uploadId, services }: { uploadId: string; services: S
           <tbody>
             {data?.rows.map((r, i) => (
               <tr key={i} className={r.status_class}>
-                <td className="mono">{r.timestamp.replace("T", " ").replace(".000Z", "")}</td>
+                <td className="mono">{formatTimestamp(r.timestamp)}</td>
                 <td>{r.service_name}</td>
                 <td>
                   <span className={`badge ${r.status_class}`}>{r.status_code}</span>
                 </td>
-                <td className="mono">{r.latency_ms != null ? `${r.latency_ms} ms` : "—"}</td>
-                <td>{r.region || "—"}</td>
+                <td className="mono">{formatLatency(r.latency_ms)}</td>
+                <td>{r.region || "-"}</td>
                 <td>{r.agent_count}</td>
               </tr>
             ))}
@@ -139,19 +140,19 @@ export function LogsView({ uploadId, services }: { uploadId: string; services: S
             )}
           </tbody>
         </table>
-        {loading && <div className="table-loading">Loading…</div>}
+        {loading && <div className="table-loading">Loading...</div>}
       </div>
 
       {data && data.pages > 1 && (
         <div className="pager">
           <button className="btn" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-            ← Prev
+            Prev
           </button>
           <span>
             Page {data.page} of {data.pages}
           </span>
           <button className="btn" disabled={page >= data.pages} onClick={() => setPage((p) => p + 1)}>
-            Next →
+            Next
           </button>
         </div>
       )}
